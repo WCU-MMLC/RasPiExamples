@@ -16,6 +16,8 @@ GPIO.setup(LED_PIN, GPIO.OUT)
 GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 def toggle_led(pin):
+	global led_on		# This is going to run in another thread so we need to tell it that we're
+	global LED_PIN		# going to be using led_on and LED_PIN that are defined above.
 	led_on = not led_on
 	GPIO.output(LED_PIN, led_on)
 
@@ -25,6 +27,7 @@ def toggle_led(pin):
 GPIO.add_event_detect(BUTTON_PIN, GPIO.RISING, callback=toggle_led, bouncetime=200)
 	
 try:
+	GPIO.output(LED_PIN, led_on)	#set the initial LED status
 	while True:
 		if not GPIO.input(BUTTON_PIN):	#since we set BUTTON_PIN to use pull-up resistor, input() returns False on button press
 			pressed_time = time.time()
@@ -33,9 +36,8 @@ try:
 			hold_time = time.time() - pressed_time
 			if hold_time >= 3:	#if user held the button longer than 3 seconds
 				break			#break the while True loop
-			
+		time.sleep(0.01)	#let's not suck up all the CPU in this loop...
+	GPIO.cleanup()				# clean up GPIO on normal exit
 	
 except KeyboardInterrupt:
 	GPIO.cleanup()			# clean up GPIO on CTRL+C exit
-
-GPIO.cleanup()				# clean up GPIO on normal exit
